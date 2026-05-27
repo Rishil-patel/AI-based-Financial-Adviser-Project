@@ -1,7 +1,6 @@
 -- =========================================
 -- MIGRATION SYSTEM
 -- AI-BASED BUSINESS FINANCIAL ADVISOR
--- FINAL PRODUCTION VERSION
 -- =========================================
 
 
