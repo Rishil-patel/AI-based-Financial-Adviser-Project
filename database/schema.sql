@@ -50,6 +50,8 @@ CREATE TABLE departments (
 CREATE TABLE expense_categories (
     id SERIAL PRIMARY KEY,
 
+    user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+
     category_name VARCHAR(255) NOT NULL,
 
     category_type VARCHAR(50) CHECK (
@@ -64,7 +66,7 @@ CREATE TABLE expense_categories (
 
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
-    UNIQUE(category_name)
+    UNIQUE(user_id, category_name)
 );
 
 
