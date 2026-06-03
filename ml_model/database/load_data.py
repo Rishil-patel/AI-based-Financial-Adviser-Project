@@ -1,14 +1,8 @@
 from ml_model.database.db_connection import fetch_data
 
-query = """
-SELECT *
-FROM expenses;
-"""
+tables = ["users", "departments", "expense_categories",
+          "expenses", "revenues", "budgets"]
 
-df = fetch_data(query)
-
-if df is not None:
-    print(df.head())
-    print("\nShape:", df.shape)
-else:
-    print("Failed to fetch data")
+for table in tables:
+    df = fetch_data(f"SELECT * FROM {table};")
+    print(f"{table}: {df.shape}")
