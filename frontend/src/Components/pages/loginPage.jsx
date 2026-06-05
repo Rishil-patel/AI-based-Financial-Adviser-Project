@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import axios from "axios";
 import {
     Box,
     Button,
@@ -32,18 +33,25 @@ const LoginPage = () => {
     const [rememberMe, setRememberMe] = useState(false);
 
     useEffect(() => {
-        const savedEmail = localStorage.getItem("email");
-        const savedPassword = localStorage.getItem("password");
+        const token = localStorage.getItem("token");
 
-        if (savedEmail && savedPassword) {
-            setFormData({
-                email: savedEmail,
-                password: savedPassword,
-            });
-
-            setRememberMe(true);
+        if (token) {
+            navigate("/dashboard");
+            return;
         }
-    }, []);
+
+
+
+        const savedEmail = localStorage.getItem("email");
+
+        if (savedEmail) {
+            setFormData((prev) => ({
+                ...prev,
+                email: savedEmail,
+                remember: true,
+            }));
+        }
+    }, [navigate]);
 
 
     const [formData, setFormData] = useState({
@@ -60,6 +68,74 @@ const LoginPage = () => {
             ...formData,
             [name]: type === "checkbox" ? checked : value,
         });
+    };
+
+    // Submit Function
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+
+        if (!validateForm()) return;
+
+        try {
+            const response = await axios.post(
+                "http://localhost:5000/api/auth/login",
+                {
+                    email: formData.email,
+                    password: formData.password,
+                }
+            );
+
+            // Save JWT Token
+            localStorage.setItem(
+                "token",
+                response.data.token
+            );
+
+            // Remember Me
+            if (formData.remember) {
+                localStorage.setItem(
+                    "email",
+                    formData.email
+                );
+            } else {
+                localStorage.removeItem("email");
+            }
+
+            setSuccess("Login Successful!");
+
+            setTimeout(() => {
+                navigate("/dashboard");
+            }, 1000);
+
+
+
+            // Save Login State
+            localStorage.setItem("isLogin", true);
+
+            // Save User Data
+            localStorage.setItem(
+                "user",
+                JSON.stringify({
+                    email: formData.email,
+                })
+            );
+
+            setSuccess("Login Successful!");
+            setErrors({});
+
+            setTimeout(() => {
+                navigate("/dashboard");
+            }, 1500);
+
+        } catch (error) {
+            setSuccess("");
+
+            setErrors({
+                password:
+                    error.response?.data?.message ||
+                    "Invalid Email or Password",
+            });
+        }
     };
 
     // Validation
@@ -85,65 +161,6 @@ const LoginPage = () => {
         setErrors(tempErrors);
 
         return Object.keys(tempErrors).length === 0;
-    };
-
-    // Submit Function
-    const handleSubmit = (e) => {
-        e.preventDefault();
-
-        if (validateForm()) {
-
-            // static login for demo 
-
-            if (
-                formData.email === "admin@gmail.com" &&
-                formData.password === "admin@456"
-            ) {
-
-                // remember me functionality
-
-                if (formData.remember) {
-                    localStorage.setItem("email", formData.email);
-                    localStorage.setItem("password", formData.password);
-                } else {
-                    localStorage.removeItem("email");
-                    localStorage.removeItem("password");
-                }
-
-                // save login state
-
-                localStorage.setItem("isLogin", true);
-
-                // save user data in local storage
-
-                localStorage.setItem(
-                    "user",
-                    JSON.stringify({
-                        name: "Domo Admin",
-                        role: "Admin",
-                        email: formData.email,
-                    })
-                );
-
-                setSuccess("Login Successful!");
-
-                setErrors({});
-
-                // deshboard page nevigate 
-
-                setTimeout(() => {
-                    navigate("/dashboard");
-                }, 1500);
-
-            } else {
-
-                setErrors({
-                    password: "Invalid Email or Password",
-                });
-
-                setSuccess("");
-            }
-        }
     };
 
     return (

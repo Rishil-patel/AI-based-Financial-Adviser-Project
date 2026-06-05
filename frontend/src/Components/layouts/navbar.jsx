@@ -1,5 +1,6 @@
 // eslint-disable-next-line 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import axios from "axios";
 
 import {
     AppBar,
@@ -33,13 +34,18 @@ const Navbar = ({ isLogin }) => {
 
     const handleLogout = () => {
 
-        localStorage.removeItem("isLogin");
 
+        localStorage.removeItem("token");
+        localStorage.removeItem("isLogin");
         localStorage.removeItem("user");
 
-        navigate("/");
+        navigate("/login");
 
-        window.location.reload();
+
+
+        // navigate("/");
+
+        // window.location.reload();
     };
 
     // NAV ITEMS
@@ -71,9 +77,22 @@ const Navbar = ({ isLogin }) => {
     //     // setOpenDrawer(false);
     // };
 
-    const user = JSON.parse(
-        localStorage.getItem("user")
-    );
+    const [user, setUser] = useState(null);
+
+    useEffect(() => {
+        const token = localStorage.getItem("token");
+
+        if (!token) return;
+
+        axios
+            .get("http://localhost:5000/api/auth/profile", {
+                headers: { Authorization: token },
+            })
+            .then((res) => {
+                setUser(res.data.user || null);
+            })
+            .catch(() => setUser(null));
+    }, []);
 
     return (
         <>
@@ -203,13 +222,17 @@ const Navbar = ({ isLogin }) => {
                                     px: 3,
                                     height: "38px",
                                     fontWeight: 700,
+                                    borderColor: "#5B5FEF",
+                                    borderWidth: "1.5px",
+                                    color: "#5B5FEF ",
                                     // background:
                                     //     "linear-gradient(90deg, #5B5FEF 0%, #7B61FF 100%)",
 
-                                    // "&:hover": {
-                                    //     background:
-                                    //         "linear-gradient(90deg, #4D52E8 0%, #694BFF 100%)",
-                                    // },
+                                    "&:hover": {
+                                        boxShadow: "0px 4px 15px rgba(91, 95, 239, 0.4)",
+                                        // background:
+                                        //     "linear-gradient(90deg, #4D52E8 0%, #694BFF 100%)",
+                                    },
                                 }}
                             >
                                 Login
@@ -294,7 +317,7 @@ const Navbar = ({ isLogin }) => {
                         <Stack
                             direction="row"
                             spacing={1.5}
-                            alignItems="center"
+                            sx={{ justifyContent: "center", alignItems: "center" }}
                         >
                             <Avatar
                                 sx={{
@@ -315,15 +338,6 @@ const Navbar = ({ isLogin }) => {
                                     }}
                                 >
                                     {user?.name}
-                                </Typography>
-
-                                <Typography
-                                    sx={{
-                                        fontSize: "12px",
-                                        color: "#777",
-                                    }}
-                                >
-                                    {user?.role}
                                 </Typography>
                             </Box>
 

@@ -9,6 +9,8 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Box, CircularProgress } from "@mui/material";
 
 import Layout from "./Components/layouts/index";
+
+import ProtectedRoute from "../src/routers/ProtectedRoute";
 // import Dashboard from "./Components/pages/deshboardPage";
 
 // ================= LAZY IMPORT =================
@@ -28,7 +30,10 @@ const SignupPage = lazy(() => import("./Components/pages/signupPage"));
 const ForgetPassword = lazy(() => import("./Components/pages/forgetPassword"));
 
 const Dashboard = lazy(() => import("./Components/pages/deshboardPage"));
+
 const ExpensesPage = lazy(() => import("./Components/pages/expenses"));
+
+const BudgetPage = lazy(() => import("./Components/pages/budget"));
 
 // ================= LOADER =================
 
@@ -115,9 +120,11 @@ function App() {
             <Route
               path="/dashboard"
               element={
-                <Layout>
-                  <Dashboard />
-                </Layout>
+                <ProtectedRoute>
+                  <Layout>
+                    <Dashboard />
+                  </Layout>
+                </ProtectedRoute>
               }
             />
             <Route
@@ -125,6 +132,14 @@ function App() {
               element={
                 <Layout>
                   <ExpensesPage />
+                </Layout>
+              }
+            />
+            <Route
+              path="/budget"
+              element={
+                <Layout>
+                  <BudgetPage />
                 </Layout>
               }
             />

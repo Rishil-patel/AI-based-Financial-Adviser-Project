@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import axios from "axios";
 
 import {
     Alert,
@@ -112,15 +113,25 @@ const SignupPage = () => {
 
     // ================= SUBMIT =================
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
 
-        if (validateForm()) {
-            console.log(formData);
+        if (!validateForm()) {
+            setSuccess("");
+            return;
+        }
 
-            setSuccess(
-                "Account Created Successfully!"
+        try {
+            const response = await axios.post(
+                "http://localhost:5000/api/auth/signup",
+                {
+                    name: formData.fullName,
+                    email: formData.email,
+                    password: formData.password,
+                }
             );
+
+            setSuccess(response.data.message);
 
             setFormData({
                 fullName: "",
@@ -131,8 +142,21 @@ const SignupPage = () => {
             });
 
             setErrors({});
-        } else {
+
+            setTimeout(() => {
+                navigate("/login");
+            }, 1500);
+
+        } catch (error) {
+            console.error(error);
+
             setSuccess("");
+
+            setErrors({
+                api:
+                    error.response?.data?.message ||
+                    "Something went wrong",
+            });
         }
     };
 
@@ -174,7 +198,7 @@ const SignupPage = () => {
                 // height: { md: "93vh", sx: "auto" },
                 bgcolor: "#fff",
                 // borderRadius: "24px",
-                overflow: "hidden",
+                // overflow: "hidden",
                 display: "flex",
                 flexDirection: {
                     xs: "column",
@@ -278,6 +302,7 @@ const SignupPage = () => {
                     display: "flex",
                     flexDirection: "column",
                     justifyContent: "center",
+                    background: "#fff"
                 }}
             >
                 {/* TITLE */}
@@ -310,7 +335,18 @@ const SignupPage = () => {
                         {success}
                     </Alert>
                 )}
-
+                {errors.api && (
+                    <Alert
+                        severity="error"
+                        sx={{
+                            mb: 2,
+                            py: 0,
+                            fontSize: "13px",
+                        }}
+                    >
+                        {errors.api}
+                    </Alert>
+                )}
                 {/* FORM */}
 
                 <Stack spacing={1}>
@@ -362,11 +398,7 @@ const SignupPage = () => {
                             helperText={errors.email}
                             sx={inputStyle}
                         />
-                    </Box>
 
-                    {/* PASSWORD */}
-
-                    <Box>
                         <Typography
                             sx={{
                                 fontSize: "14px",

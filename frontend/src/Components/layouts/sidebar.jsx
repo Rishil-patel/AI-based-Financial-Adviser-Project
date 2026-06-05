@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import axios from "axios";
 import { useLocation, useNavigate } from "react-router-dom";
 
 import {
@@ -29,6 +30,7 @@ const menuItems = [
   {
     name: "Budget",
     icon: <ReceiptLongOutlinedIcon />,
+    path: "/budget",
   },
   {
     name: "Revenues",
@@ -56,6 +58,29 @@ const Sidebar = () => {
   const [active, setActive] = useState("Dashboard");
   const navigate = useNavigate();
   const location = useLocation();
+
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+
+    if (!token) return;
+
+    axios
+      .get("http://localhost:5000/api/auth/profile", {
+        headers: { Authorization: token },
+      })
+      .then((res) => setUser(res.data.user || null))
+      .catch(() => setUser(null));
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem("isLogin");
+    localStorage.removeItem("user");
+    localStorage.removeItem("token");
+    navigate("/");
+    window.location.reload();
+  };
 
   useEffect(() => {
     const current = menuItems.find(
@@ -256,9 +281,9 @@ const Sidebar = () => {
 
         <Stack
           direction="row"
-          alignItems="center"
           spacing={1.5}
           sx={{
+            alignItems: "center",
             p: 1,
             borderRadius: "12px",
             "&:hover": {
@@ -273,7 +298,7 @@ const Sidebar = () => {
               height: 42,
             }}
           >
-            R
+            {user?.name ? user.name.charAt(0) : "U"}
           </Avatar>
 
           <Box>
@@ -284,17 +309,9 @@ const Sidebar = () => {
                 color: "#111",
               }}
             >
-              Rishil Patel
+              {user?.name || "User"}
             </Typography>
 
-            <Typography
-              sx={{
-                fontSize: "12px",
-                color: "#777",
-              }}
-            >
-              Admin
-            </Typography>
           </Box>
         </Stack>
 
@@ -316,6 +333,7 @@ const Sidebar = () => {
               background: "#fff1f0",
             },
           }}
+          onClick={handleLogout}
         >
           <LogoutOutlinedIcon />
 
