@@ -1,46 +1,28 @@
 const { Pool } = require("pg");
-const fs = require("fs");
-const path = require("path");
-require("dotenv").config();
 
-// Database connection
+// Paste your Neon Database URL here
+const DATABASE_URL = "postgresql://neondb_owner:npg_wpNc8tA3aWov@ep-polished-haze-aolhlk96-pooler.c-2.ap-southeast-1.aws.neon.tech/financial_advisor?sslmode=require&channel_binding=require";
+
 const pool = new Pool({
-    user: process.env.DB_USER,
-    host: process.env.DB_HOST,
-    database: process.env.DB_NAME,
-    password: process.env.DB_PASSWORD,
-    port: process.env.DB_PORT,
+    connectionString: DATABASE_URL,
+    ssl: {
+        rejectUnauthorized: false
+    }
 });
 
-// Read SQL file safely
-const readSQL = (filePath) => {
-    return fs.readFileSync(path.join(__dirname, filePath)).toString();
-};
-
-// Execute SQL
-const runSQL = async (filePath) => {
-    const sql = readSQL(filePath);
-    await pool.query(sql);
-};
-
-const initDB = async () => {
+async function testConnection() {
     try {
-        console.log("🟡 Initializing database...");
+        const result = await pool.query("SELECT NOW()");
 
-        console.log("📦 Running schema...");
-        await runSQL("schema.sql");
-
-        console.log("🌱 Inserting seed data...");
-        await runSQL("seed.sql");
-
-        console.log("🟢 Database setup complete!");
+        console.log("✅ Connected to Neon Database");
+        console.log("Server Time:", result.rows[0].now);
 
     } catch (err) {
-        console.error("🔴 DB Initialization failed:");
+        console.error("❌ Database Connection Failed");
         console.error(err.message);
     } finally {
         await pool.end();
     }
-};
+}
 
-initDB();
+testConnection();
