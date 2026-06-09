@@ -2,7 +2,8 @@ from sqlalchemy import create_engine
 import pandas as pd
 
 # PostgreSQL Connection URL
-DATABASE_URL = "postgresql://postgres:your_password@localhost:5432/financial_advisor"
+DATABASE_URL = "postgresql://neondb_owner:npg_wpNc8tA3aWov@ep-polished-haze-aolhlk96-pooler.c-2.ap-southeast-1.aws.neon.tech/financial_advisor?sslmode=require&channel_binding=require"
+
 # DATABASE_URL = "postgresql://postgres:THIS_IS_DEFINITELY_WRONG_123456@localhost:5432/financial_advisor"
 
 # Create Engine
