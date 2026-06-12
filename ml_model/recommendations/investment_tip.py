@@ -1,23 +1,32 @@
+# -------------------------
+# === Investment Tip ===
+# -------------------------
+
 def generate(financial_metrics):
 
     recommendations = []
 
-    profit_margin = financial_metrics["profit_margin"]
-    revenue_growth = financial_metrics["revenue_growth"]
-    expense_growth = financial_metrics["expense_growth"]
-    expense_ratio = financial_metrics["expense_ratio"]
+    try:
+        profit_margin = financial_metrics["profit_margin"]
+        revenue_growth = financial_metrics["revenue_growth"]
+        expense_growth = financial_metrics["expense_growth"]
+        expense_ratio = financial_metrics["expense_ratio"]
 
-    current_revenue = financial_metrics["current_revenue"]
-    current_expenses = financial_metrics["current_expenses"]
-    current_profit = financial_metrics["current_profit"]
+        current_revenue = financial_metrics["current_revenue"]
+        current_expenses = financial_metrics["current_expenses"]
+        current_profit = financial_metrics["current_profit"]
 
-    predicted_profit = financial_metrics["predicted_profit"]
-    predicted_profit_change = financial_metrics["predicted_profit_change"]
+        predicted_profit = financial_metrics["predicted_profit"]
+        predicted_profit_change = financial_metrics["predicted_profit_change"]
 
-    # =====================================================
-    # RULE 1: HEALTHY PROFIT MARGIN
-    # Business has sufficient retained earnings to deploy capital.
-    # =====================================================
+    except KeyError as e:
+        print(f"[ERROR] Missing key: {e}")
+        raise
+    except Exception as e:
+        print(f"[ERROR] Failed to read financial metrics: {e}")
+        raise
+
+    # -- healthy profit margin
 
     if profit_margin >= 20:
 
@@ -30,10 +39,7 @@ def generate(financial_metrics):
             "priority": "high"
         })
 
-    # =====================================================
-    # RULE 2: EFFICIENT SCALING
-    # Revenue growing faster than expenses — a healthy scaling signal.
-    # =====================================================
+    # -- efficient scaling
 
     if revenue_growth > expense_growth and revenue_growth > 10:
 
@@ -46,10 +52,7 @@ def generate(financial_metrics):
             "priority": "high"
         })
 
-    # =====================================================
-    # RULE 3: LOW EXPENSE BURN RATE
-    # Low expense ratio means investable surplus exists.
-    # =====================================================
+    # -- low expense burn rate
 
     if expense_ratio < 65:
 
@@ -62,10 +65,7 @@ def generate(financial_metrics):
             "priority": "medium"
         })
 
-    # =====================================================
-    # RULE 4: STRONG PROFIT GROWTH FORECAST
-    # Forward-looking confidence for capital deployment.
-    # =====================================================
+    # -- strong profit growth forecast
 
     if predicted_profit_change >= 20:
 
@@ -90,10 +90,7 @@ def generate(financial_metrics):
             "priority": "medium"
         })
 
-    # =====================================================
-    # RULE 5: FALLING COSTS WITH HEALTHY MARGIN
-    # Declining expenses while margins hold — freed-up capital signal.
-    # =====================================================
+    # -- falling costs with healthy margin
 
     if expense_growth < 0 and profit_margin > 10:
 
@@ -106,11 +103,7 @@ def generate(financial_metrics):
             "priority": "medium"
         })
 
-    # =====================================================
-    # RULE 6: POSITIVE PREDICTED PROFIT (SAFETY GATE)
-    # Only suggest investment if future outlook is not negative.
-    # Suppress all tips if predicted profit is a loss.
-    # =====================================================
+    # -- positive predicted profit safety gate
 
     if predicted_profit < 0:
         return []

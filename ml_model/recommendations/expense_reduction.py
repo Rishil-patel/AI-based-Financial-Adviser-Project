@@ -1,20 +1,29 @@
+# -------------------------
+# === Expense Reduction ===
+# -------------------------
+
 def generate(financial_metrics):
 
     recommendations = []
 
-    profit_margin = financial_metrics["profit_margin"]
-    revenue_growth = financial_metrics["revenue_growth"]
-    expense_growth = financial_metrics["expense_growth"]
-    expense_ratio = financial_metrics["expense_ratio"]
+    try:
+        profit_margin = financial_metrics["profit_margin"]
+        revenue_growth = financial_metrics["revenue_growth"]
+        expense_growth = financial_metrics["expense_growth"]
+        expense_ratio = financial_metrics["expense_ratio"]
 
-    current_revenue = financial_metrics["current_revenue"]
-    current_expenses = financial_metrics["current_expenses"]
-    predicted_profit = financial_metrics["predicted_profit"]
+        current_revenue = financial_metrics["current_revenue"]
+        current_expenses = financial_metrics["current_expenses"]
+        predicted_profit = financial_metrics["predicted_profit"]
 
-    # =====================================================
-    # RULE 1: DANGEROUSLY HIGH BURN RATE
-    # Spending 80%+ of revenue on costs is a critical signal.
-    # =====================================================
+    except KeyError as e:
+        print(f"[ERROR] Missing key: {e}")
+        raise
+    except Exception as e:
+        print(f"[ERROR] Failed to read financial metrics: {e}")
+        raise
+
+    # -- dangerously high burn rate
 
     if expense_ratio > 80:
 
@@ -27,10 +36,7 @@ def generate(financial_metrics):
             "priority": "high"
         })
 
-    # =====================================================
-    # RULE 2: EXPENSES SCALING FASTER THAN REVENUE
-    # Business is losing operational efficiency.
-    # =====================================================
+    # -- expenses scaling faster than revenue
 
     if expense_growth > revenue_growth and expense_growth > 20:
 
@@ -43,10 +49,7 @@ def generate(financial_metrics):
             "priority": "high"
         })
 
-    # =====================================================
-    # RULE 3: THIN PROFIT MARGINS
-    # Low margins leave no buffer — cost optimisation is necessary.
-    # =====================================================
+    # -- thin profit margins
 
     if profit_margin < 10 and current_expenses > 0:
 
@@ -60,10 +63,7 @@ def generate(financial_metrics):
             "priority": "medium"
         })
 
-    # =====================================================
-    # RULE 4: COST RISE WITHOUT REVENUE JUSTIFICATION
-    # Expenses increasing while revenue stagnates — pure inefficiency.
-    # =====================================================
+    # -- cost rise without revenue justification
 
     if expense_growth > 15 and revenue_growth < 5:
 
@@ -76,10 +76,7 @@ def generate(financial_metrics):
             "priority": "medium"
         })
 
-    # =====================================================
-    # RULE 5: PREDICTED LOSS NEXT MONTH
-    # Proactive cost cutting before the loss materialises.
-    # =====================================================
+    # -- predicted loss next month
 
     if predicted_profit < 0:
 

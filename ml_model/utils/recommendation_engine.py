@@ -7,14 +7,14 @@ from ml_model.recommendations.saving_suggestion import generate as saving_sugges
 from ml_model.recommendations.risk_alert import generate as risk_alert
 
 
-# =====================================================
-# PRIORITY WEIGHTING ENGINE
-# =====================================================
+# -------------------------
+# === Priority Weighting Engine ===
+# -------------------------
 
 PRIORITY_TO_SCORE = {
-    "high":   3,
+    "high": 3,
     "medium": 2,
-    "low":    1
+    "low": 1
 }
 
 SCORE_TO_PRIORITY = {
@@ -26,19 +26,24 @@ SCORE_TO_PRIORITY = {
 
 def calculate_priority(rec, financial_metrics):
 
-    rec_type = rec["recommendation_type"]
-    score = PRIORITY_TO_SCORE.get(rec["priority"], 1)
+    try:
+        rec_type = rec["recommendation_type"]
+        score = PRIORITY_TO_SCORE.get(rec["priority"], 1)
 
-    predicted_profit   = financial_metrics["predicted_profit"]
-    expense_ratio      = financial_metrics["expense_ratio"]
-    expense_growth     = financial_metrics["expense_growth"]
-    revenue_growth     = financial_metrics["revenue_growth"]
-    budget_utilization = financial_metrics["budget_utilization"]
+        predicted_profit = financial_metrics["predicted_profit"]
+        expense_ratio = financial_metrics["expense_ratio"]
+        expense_growth = financial_metrics["expense_growth"]
+        revenue_growth = financial_metrics["revenue_growth"]
+        budget_utilization = financial_metrics["budget_utilization"]
 
-    # =====================================================
-    # CONTEXT BOOSTS — TYPE SPECIFIC
-    # Each type only reacts to signals relevant to it.
-    # =====================================================
+    except KeyError as e:
+        print(f"[ERROR] Missing key: {e}")
+        raise
+    except Exception as e:
+        print(f"[ERROR] Failed to calculate priority: {e}")
+        raise
+
+    # -- context boosts
 
     if rec_type == "risk_alert":
 
@@ -71,30 +76,32 @@ def calculate_priority(rec, financial_metrics):
 
     elif rec_type == "investment_tip":
 
-        # Downgrade investment tips under danger signals —
-        # never recommend investing into a struggling business.
         if predicted_profit < 0:
             score -= 1
 
         if revenue_growth < 0:
             score -= 1
 
-    # =====================================================
-    # CLAMP SCORE BETWEEN 1 AND 3
-    # =====================================================
+    # -- clamp score
 
     score = max(1, min(3, score))
 
     return SCORE_TO_PRIORITY[score]
 
 
-# =====================================================
-# MAIN ENGINE
-# =====================================================
+# -------------------------
+# === Main Engine ===
+# -------------------------
 
 def generate_and_store_recommendations(user_id):
 
-    financial_metrics = get_financial_metrics(user_id)
+    # -- financial metrics
+
+    try:
+        financial_metrics = get_financial_metrics(user_id)
+    except Exception as e:
+        print(f"[ERROR] Failed to fetch financial metrics: {e}")
+        raise
 
     modules = [
         risk_alert,
@@ -107,17 +114,18 @@ def generate_and_store_recommendations(user_id):
     recommendations = []
     silent_modules = []
 
-    # =====================================================
-    # STEP 1: RUN MODULES
-    # =====================================================
+    # -- run modules
 
     for module in modules:
 
-        results = module(financial_metrics)
+        try:
+            results = module(financial_metrics)
+        except Exception as e:
+            print(f"[ERROR] Module execution failed: {e}")
+            raise
 
         module_name = module.__name__
 
-        # CASE 1: module produced recommendations
         if results:
             for r in results:
                 r["priority"] = calculate_priority(
@@ -125,14 +133,10 @@ def generate_and_store_recommendations(user_id):
                     financial_metrics
                 )
                 recommendations.append(r)
-
-        # CASE 2: module was silent
         else:
             silent_modules.append(module_name)
 
-    # =====================================================
-    # STEP 2: GLOBAL FALLBACK (ONLY IF EVERYTHING IS EMPTY)
-    # =====================================================
+    # -- global fallback
 
     if not recommendations:
         recommendations.append({
@@ -141,9 +145,7 @@ def generate_and_store_recommendations(user_id):
             "priority": "low"
         })
 
-    # =====================================================
-    # STEP 3: PARTIAL SILENCE INSIGHT
-    # =====================================================
+    # -- partial silence insight
 
     elif len(silent_modules) > 0:
         recommendations.append({
@@ -152,11 +154,7 @@ def generate_and_store_recommendations(user_id):
             "priority": "low"
         })
 
-    # =====================================================
-    # STEP 4: PHASE 1 — GUARANTEED SLOT PER MODULE
-    # Every module gets at least one recommendation
-    # in the final output — no module is silenced.
-    # =====================================================
+    # -- guaranteed slot per module
 
     TOTAL_LIMIT = 10
 
@@ -166,24 +164,32 @@ def generate_and_store_recommendations(user_id):
 
     for r in recommendations:
         rec_type = r["recommendation_type"]
+
         if rec_type not in seen_types:
             guaranteed.append(r)
             seen_types.add(rec_type)
         else:
             leftover.append(r)
 
-    # =====================================================
-    # STEP 5: PHASE 2 — FILL REMAINING SLOTS BY PRIORITY
-    # Best of the leftover fill remaining slots,
-    # highest priority first.
-    # =====================================================
+    # -- fill remaining slots
 
-    priority_order = {"high": 0, "medium": 1, "low": 2}
+    priority_order = {
+        "high": 0,
+        "medium": 1,
+        "low": 2
+    }
 
-    leftover_sorted = sorted(
-        leftover,
-        key=lambda x: priority_order[x["priority"]]
-    )
+    try:
+        leftover_sorted = sorted(
+            leftover,
+            key=lambda x: priority_order[x["priority"]]
+        )
+    except KeyError as e:
+        print(f"[ERROR] Invalid priority: {e}")
+        raise
+    except Exception as e:
+        print(f"[ERROR] Failed to sort recommendations: {e}")
+        raise
 
     remaining_slots = TOTAL_LIMIT - len(guaranteed)
 
@@ -192,24 +198,26 @@ def generate_and_store_recommendations(user_id):
         + leftover_sorted[:remaining_slots]
     )
 
-    # =====================================================
-    # STEP 6: STORE IN DATABASE
-    # =====================================================
+    # -- store in database
 
-    with engine.begin() as conn:
-        for rec in final_recommendations:
-            conn.execute(
-                """
-                INSERT INTO ai_recommendations
-                (user_id, recommendation_type, message, priority, created_at)
-                VALUES (%s, %s, %s, %s, NOW())
-                """,
-                (
-                    user_id,
-                    rec["recommendation_type"],
-                    rec["message"],
-                    rec["priority"]
+    try:
+        with engine.begin() as conn:
+            for rec in final_recommendations:
+                conn.execute(
+                    """
+                    INSERT INTO ai_recommendations
+                    (user_id, recommendation_type, message, priority, created_at)
+                    VALUES (%s, %s, %s, %s, NOW())
+                    """,
+                    (
+                        user_id,
+                        rec["recommendation_type"],
+                        rec["message"],
+                        rec["priority"]
+                    )
                 )
-            )
+    except Exception as e:
+        print(f"[ERROR] Failed to store recommendations: {e}")
+        raise
 
     return final_recommendations

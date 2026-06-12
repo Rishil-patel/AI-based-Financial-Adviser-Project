@@ -1,20 +1,30 @@
+# -------------------------
+# === Risk Alert ===
+# -------------------------
+
 def generate(financial_metrics):
 
     recommendations = []
 
-    current_revenue = financial_metrics["current_revenue"]
-    current_expenses = financial_metrics["current_expenses"]
+    try:
+        current_revenue = financial_metrics["current_revenue"]
+        current_expenses = financial_metrics["current_expenses"]
 
-    predicted_profit = financial_metrics["predicted_profit"]
-    predicted_profit_change = financial_metrics["predicted_profit_change"]
+        predicted_profit = financial_metrics["predicted_profit"]
+        predicted_profit_change = financial_metrics["predicted_profit_change"]
 
-    revenue_growth = financial_metrics["revenue_growth"]
-    expense_growth = financial_metrics["expense_growth"]
-    expense_ratio = financial_metrics["expense_ratio"]
+        revenue_growth = financial_metrics["revenue_growth"]
+        expense_growth = financial_metrics["expense_growth"]
+        expense_ratio = financial_metrics["expense_ratio"]
 
-    # =====================================================
-    # RULE 1: EXPENSES > REVENUE
-    # =====================================================
+    except KeyError as e:
+        print(f"[ERROR] Missing key: {e}")
+        raise
+    except Exception as e:
+        print(f"[ERROR] Failed to read financial metrics: {e}")
+        raise
+
+    # -- expenses exceed revenue
 
     if current_expenses > current_revenue:
 
@@ -27,9 +37,7 @@ def generate(financial_metrics):
             "priority": "high"
         })
 
-    # =====================================================
-    # RULE 2: NEGATIVE PROFIT FORECAST
-    # =====================================================
+    # -- negative profit forecast
 
     if predicted_profit < 0:
 
@@ -42,9 +50,7 @@ def generate(financial_metrics):
             "priority": "high"
         })
 
-    # =====================================================
-    # RULE 3: PROFIT DROP
-    # =====================================================
+    # -- profit drop
 
     if predicted_profit_change <= -50:
 
@@ -68,9 +74,7 @@ def generate(financial_metrics):
             "priority": "medium"
         })
 
-    # =====================================================
-    # RULE 4: EXPENSE GROWTH
-    # =====================================================
+    # -- expense growth
 
     if expense_growth > 30:
 
@@ -83,9 +87,7 @@ def generate(financial_metrics):
             "priority": "medium"
         })
 
-    # =====================================================
-    # RULE 5: HIGH EXPENSE RATIO
-    # =====================================================
+    # -- high expense ratio
 
     if expense_ratio > 90:
 
@@ -98,9 +100,7 @@ def generate(financial_metrics):
             "priority": "high"
         })
 
-    # =====================================================
-    # RULE 6: REVENUE DECLINE
-    # =====================================================
+    # -- revenue decline
 
     if revenue_growth < 0:
 

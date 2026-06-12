@@ -1,18 +1,30 @@
+# -------------------------
+# === Budget Advice ===
+# -------------------------
+
 def generate(financial_metrics):
 
     recommendations = []
 
-    current_expenses = financial_metrics["current_expenses"]
-    total_budget = financial_metrics["total_budget"]
-    budget_utilization = financial_metrics["budget_utilization"]
-    budget_variance = financial_metrics["budget_variance"]
+    try:
+        current_expenses = financial_metrics["current_expenses"]
+        total_budget = financial_metrics["total_budget"]
+        budget_utilization = financial_metrics["budget_utilization"]
+        budget_variance = financial_metrics["budget_variance"]
 
-    current_month = financial_metrics.get("current_month", "this month")
+        current_month = financial_metrics.get(
+            "current_month",
+            "this month"
+        )
 
-    # =====================================================
-    # RULE 1: SEVERELY OVER BUDGET
-    # Spending 120%+ of planned budget — critical overshoot.
-    # =====================================================
+    except KeyError as e:
+        print(f"[ERROR] Missing key: {e}")
+        raise
+    except Exception as e:
+        print(f"[ERROR] Failed to read financial metrics: {e}")
+        raise
+
+    # -- severely over budget
 
     if budget_utilization > 120:
 
@@ -26,10 +38,7 @@ def generate(financial_metrics):
             "priority": "high"
         })
 
-    # =====================================================
-    # RULE 2: MODERATELY OVER BUDGET
-    # Spending between 100–120% of planned budget.
-    # =====================================================
+    # -- moderately over budget
 
     elif budget_utilization > 100:
 
@@ -42,10 +51,7 @@ def generate(financial_metrics):
             "priority": "medium"
         })
 
-    # =====================================================
-    # RULE 3: APPROACHING BUDGET LIMIT
-    # Between 90–100% — close to the ceiling.
-    # =====================================================
+    # -- approaching budget limit
 
     elif budget_utilization > 90:
 
@@ -58,10 +64,7 @@ def generate(financial_metrics):
             "priority": "medium"
         })
 
-    # =====================================================
-    # RULE 4: HEAVILY UNDERUTILISED BUDGET
-    # Below 50% — capital may be sitting idle unproductively.
-    # =====================================================
+    # -- heavily underutilised budget
 
     if budget_utilization > 0 and budget_utilization < 50:
 
@@ -74,10 +77,7 @@ def generate(financial_metrics):
             "priority": "low"
         })
 
-    # =====================================================
-    # RULE 5: NO BUDGET SET
-    # Operating without a plan is a risk in itself.
-    # =====================================================
+    # -- no budget set
 
     if total_budget == 0:
 

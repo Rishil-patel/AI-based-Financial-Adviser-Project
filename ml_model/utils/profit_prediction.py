@@ -4,19 +4,16 @@ from ml_model.database.db_connection import (
 )
 
 
-# =========================================
-# GENERATE PROFIT PREDICTION
-# =========================================
+# -------------------------
+# === Generate Profit Prediction ===
+# -------------------------
+# -- fetch revenue prediction
 
 def generate_profit_prediction(
     user_id,
     prediction_month,
     prediction_year
 ):
-
-    # =========================================
-    # FETCH REVENUE PREDICTION
-    # =========================================
 
     revenue_query = """
     SELECT predicted_value, confidence_score
@@ -27,23 +24,25 @@ def generate_profit_prediction(
     AND prediction_year = %s;
     """
 
-    revenue_df = fetch_data(
-        revenue_query,
-        (
-            user_id,
-            prediction_month,
-            prediction_year
+    try:
+        revenue_df = fetch_data(
+            revenue_query,
+            (
+                user_id,
+                prediction_month,
+                prediction_year
+            )
         )
-    )
+    except Exception as e:
+        print(f"[ERROR] Failed to fetch revenue prediction: {e}")
+        raise
 
     if revenue_df is None or revenue_df.empty:
         raise ValueError(
             "Revenue prediction not found."
         )
 
-    # =========================================
-    # FETCH EXPENSE PREDICTION
-    # =========================================
+    # -- fetch expense prediction
 
     expense_query = """
     SELECT predicted_value, confidence_score
@@ -54,53 +53,63 @@ def generate_profit_prediction(
     AND prediction_year = %s;
     """
 
-    expense_df = fetch_data(
-        expense_query,
-        (
-            user_id,
-            prediction_month,
-            prediction_year
+    try:
+        expense_df = fetch_data(
+            expense_query,
+            (
+                user_id,
+                prediction_month,
+                prediction_year
+            )
         )
-    )
+    except Exception as e:
+        print(f"[ERROR] Failed to fetch expense prediction: {e}")
+        raise
 
     if expense_df is None or expense_df.empty:
         raise ValueError(
             "Expense prediction not found."
         )
 
-    # =========================================
-    # CALCULATE PROFIT
-    # =========================================
+    # -- calculate profit
 
-    predicted_revenue = float(
-        revenue_df["predicted_value"].iloc[0]
-    )
+    try:
+        predicted_revenue = float(
+            revenue_df["predicted_value"].iloc[0]
+        )
 
-    predicted_expense = float(
-        expense_df["predicted_value"].iloc[0]
-    )
+        predicted_expense = float(
+            expense_df["predicted_value"].iloc[0]
+        )
 
-    revenue_confidence = float(
-        revenue_df["confidence_score"].iloc[0]
-    )
+        revenue_confidence = float(
+            revenue_df["confidence_score"].iloc[0]
+        )
 
-    expense_confidence = float(
-        expense_df["confidence_score"].iloc[0]
-    )
+        expense_confidence = float(
+            expense_df["confidence_score"].iloc[0]
+        )
 
-    predicted_profit = round(
-        predicted_revenue - predicted_expense,
-        2
-    )
+        predicted_profit = round(
+            predicted_revenue - predicted_expense,
+            2
+        )
 
-    confidence_score = min(
-        revenue_confidence,
-        expense_confidence
-    )
+        confidence_score = min(
+            revenue_confidence,
+            expense_confidence
+        )
+    except KeyError as e:
+        print(f"[ERROR] Missing column: {e}")
+        raise
+    except ValueError as e:
+        print(f"[ERROR] Invalid prediction value: {e}")
+        raise
+    except Exception as e:
+        print(f"[ERROR] Profit calculation failed: {e}")
+        raise
 
-    # =========================================
-    # CHECK EXISTING PROFIT
-    # =========================================
+    # -- check existing profit
 
     check_query = """
     SELECT id
@@ -111,18 +120,20 @@ def generate_profit_prediction(
     AND prediction_year = %s;
     """
 
-    existing_profit = fetch_data(
-        check_query,
-        (
-            user_id,
-            prediction_month,
-            prediction_year
+    try:
+        existing_profit = fetch_data(
+            check_query,
+            (
+                user_id,
+                prediction_month,
+                prediction_year
+            )
         )
-    )
+    except Exception as e:
+        print(f"[ERROR] Failed to check existing profit prediction: {e}")
+        raise
 
-    # =========================================
-    # UPDATE PROFIT
-    # =========================================
+    # -- update profit
 
     if (
         existing_profit is not None
@@ -138,23 +149,28 @@ def generate_profit_prediction(
         WHERE id = %s;
         """
 
-        execute_query(
-            update_query,
-            (
-                predicted_profit,
-                confidence_score,
-                int(existing_profit["id"].iloc[0])
+        try:
+            execute_query(
+                update_query,
+                (
+                    predicted_profit,
+                    confidence_score,
+                    int(existing_profit["id"].iloc[0])
+                )
             )
-        )
+        except KeyError as e:
+            print(f"[ERROR] Missing column: {e}")
+            raise
+        except Exception as e:
+            print(f"[ERROR] Failed to update profit prediction: {e}")
+            raise
 
         print(
             f"Profit prediction updated "
             f"for User {user_id}"
         )
 
-    # =========================================
-    # INSERT PROFIT
-    # =========================================
+    # -- insert profit
 
     else:
 
@@ -170,17 +186,21 @@ def generate_profit_prediction(
         VALUES (%s, %s, %s, %s, %s, %s);
         """
 
-        execute_query(
-            insert_query,
-            (
-                user_id,
-                "profit",
-                predicted_profit,
-                confidence_score,
-                prediction_month,
-                prediction_year
+        try:
+            execute_query(
+                insert_query,
+                (
+                    user_id,
+                    "profit",
+                    predicted_profit,
+                    confidence_score,
+                    prediction_month,
+                    prediction_year
+                )
             )
-        )
+        except Exception as e:
+            print(f"[ERROR] Failed to insert profit prediction: {e}")
+            raise
 
         print(
             f"Profit prediction created "

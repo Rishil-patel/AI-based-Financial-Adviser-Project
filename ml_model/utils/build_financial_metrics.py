@@ -3,6 +3,10 @@ from datetime import datetime
 from ml_model.database.db_connection import fetch_data
 
 
+# -------------------------
+# === Financial Metrics ===
+# -------------------------
+
 def get_financial_metrics(user_id):
 
     current_month = datetime.now().month
@@ -15,9 +19,7 @@ def get_financial_metrics(user_id):
         previous_month = current_month - 1
         previous_year = current_year
 
-    # =====================================================
-    # CURRENT REVENUE
-    # =====================================================
+    # -- current revenue
 
     revenue_query = f"""
     SELECT COALESCE(SUM(amount), 0) AS revenue
@@ -27,14 +29,22 @@ def get_financial_metrics(user_id):
     AND EXTRACT(YEAR FROM revenue_date) = {current_year};
     """
 
-    current_revenue = float(
-        fetch_data(revenue_query)
-        .iloc[0]["revenue"]
-    )
+    try:
+        current_revenue = float(
+            fetch_data(revenue_query)
+            .iloc[0]["revenue"]
+        )
+    except KeyError as e:
+        print(f"[ERROR] Missing column: {e}")
+        raise
+    except ValueError as e:
+        print(f"[ERROR] Invalid revenue value: {e}")
+        raise
+    except Exception as e:
+        print(f"[ERROR] Failed to fetch current revenue: {e}")
+        raise
 
-    # =====================================================
-    # CURRENT EXPENSES
-    # =====================================================
+    # -- current expenses
 
     expense_query = f"""
     SELECT COALESCE(SUM(amount), 0) AS expenses
@@ -44,14 +54,22 @@ def get_financial_metrics(user_id):
     AND EXTRACT(YEAR FROM expense_date) = {current_year};
     """
 
-    current_expenses = float(
-        fetch_data(expense_query)
-        .iloc[0]["expenses"]
-    )
+    try:
+        current_expenses = float(
+            fetch_data(expense_query)
+            .iloc[0]["expenses"]
+        )
+    except KeyError as e:
+        print(f"[ERROR] Missing column: {e}")
+        raise
+    except ValueError as e:
+        print(f"[ERROR] Invalid expense value: {e}")
+        raise
+    except Exception as e:
+        print(f"[ERROR] Failed to fetch current expenses: {e}")
+        raise
 
-    # =====================================================
-    # PREVIOUS REVENUE
-    # =====================================================
+    # -- previous revenue
 
     previous_revenue_query = f"""
     SELECT COALESCE(SUM(amount), 0) AS revenue
@@ -61,14 +79,22 @@ def get_financial_metrics(user_id):
     AND EXTRACT(YEAR FROM revenue_date) = {previous_year};
     """
 
-    previous_revenue = float(
-        fetch_data(previous_revenue_query)
-        .iloc[0]["revenue"]
-    )
+    try:
+        previous_revenue = float(
+            fetch_data(previous_revenue_query)
+            .iloc[0]["revenue"]
+        )
+    except KeyError as e:
+        print(f"[ERROR] Missing column: {e}")
+        raise
+    except ValueError as e:
+        print(f"[ERROR] Invalid revenue value: {e}")
+        raise
+    except Exception as e:
+        print(f"[ERROR] Failed to fetch previous revenue: {e}")
+        raise
 
-    # =====================================================
-    # PREVIOUS EXPENSES
-    # =====================================================
+    # -- previous expenses
 
     previous_expense_query = f"""
     SELECT COALESCE(SUM(amount), 0) AS expenses
@@ -78,14 +104,22 @@ def get_financial_metrics(user_id):
     AND EXTRACT(YEAR FROM expense_date) = {previous_year};
     """
 
-    previous_expenses = float(
-        fetch_data(previous_expense_query)
-        .iloc[0]["expenses"]
-    )
+    try:
+        previous_expenses = float(
+            fetch_data(previous_expense_query)
+            .iloc[0]["expenses"]
+        )
+    except KeyError as e:
+        print(f"[ERROR] Missing column: {e}")
+        raise
+    except ValueError as e:
+        print(f"[ERROR] Invalid expense value: {e}")
+        raise
+    except Exception as e:
+        print(f"[ERROR] Failed to fetch previous expenses: {e}")
+        raise
 
-    # =====================================================
-    # PREDICTIONS
-    # =====================================================
+    # -- predictions
 
     def get_prediction(prediction_type):
 
@@ -98,22 +132,31 @@ def get_financial_metrics(user_id):
         LIMIT 1;
         """
 
-        df = fetch_data(query)
+        try:
+            df = fetch_data(query)
 
-        if df.empty:
-            return 0
+            if df.empty:
+                return 0
 
-        return float(
-            df.iloc[0]["predicted_value"]
-        )
+            return float(
+                df.iloc[0]["predicted_value"]
+            )
+
+        except KeyError as e:
+            print(f"[ERROR] Missing column: {e}")
+            raise
+        except ValueError as e:
+            print(f"[ERROR] Invalid prediction value: {e}")
+            raise
+        except Exception as e:
+            print(f"[ERROR] Failed to fetch {prediction_type} prediction: {e}")
+            raise
 
     predicted_revenue = get_prediction("revenue")
     predicted_expenses = get_prediction("expense")
     predicted_profit = get_prediction("profit")
 
-    # =====================================================
-    # TOTAL BUDGET
-    # =====================================================
+    # -- total budget
 
     budget_query = f"""
     SELECT COALESCE(SUM(amount), 0) AS total_budget
@@ -123,75 +166,85 @@ def get_financial_metrics(user_id):
     AND budget_year = {current_year};
     """
 
-    total_budget = float(
-        fetch_data(budget_query)
-        .iloc[0]["total_budget"]
-    )
+    try:
+        total_budget = float(
+            fetch_data(budget_query)
+            .iloc[0]["total_budget"]
+        )
+    except KeyError as e:
+        print(f"[ERROR] Missing column: {e}")
+        raise
+    except ValueError as e:
+        print(f"[ERROR] Invalid budget value: {e}")
+        raise
+    except Exception as e:
+        print(f"[ERROR] Failed to fetch total budget: {e}")
+        raise
 
-    # =====================================================
-    # CALCULATED METRICS
-    # =====================================================
+    # -- calculated metrics
 
-    current_profit = (
-        current_revenue
-        - current_expenses
-    )
-
-    revenue_growth = (
-        (
+    try:
+        current_profit = (
             current_revenue
-            - previous_revenue
+            - current_expenses
         )
-        / previous_revenue
-        * 100
-    ) if previous_revenue > 0 else 0
 
-    expense_growth = (
-        (
+        revenue_growth = (
+            (
+                current_revenue
+                - previous_revenue
+            )
+            / previous_revenue
+            * 100
+        ) if previous_revenue > 0 else 0
+
+        expense_growth = (
+            (
+                current_expenses
+                - previous_expenses
+            )
+            / previous_expenses
+            * 100
+        ) if previous_expenses > 0 else 0
+
+        expense_ratio = (
             current_expenses
-            - previous_expenses
-        )
-        / previous_expenses
-        * 100
-    ) if previous_expenses > 0 else 0
-
-    expense_ratio = (
-        current_expenses
-        / current_revenue
-        * 100
-    ) if current_revenue > 0 else 0
-
-    predicted_profit_change = (
-        (
-            predicted_profit
-            - current_profit
-        )
-        / abs(current_profit)
-        * 100
-    ) if current_profit != 0 else 0
-
-    profit_margin = (
-        ( 
-            current_profit
             / current_revenue
+            * 100
+        ) if current_revenue > 0 else 0
+
+        predicted_profit_change = (
+            (
+                predicted_profit
+                - current_profit
+            )
+            / abs(current_profit)
+            * 100
+        ) if current_profit != 0 else 0
+
+        profit_margin = (
+            (
+                current_profit
+                / current_revenue
+            )
+            * 100
+        ) if current_revenue > 0 else 0
+
+        budget_utilization = (
+            current_expenses
+            / total_budget
+            * 100
+        ) if total_budget > 0 else 0
+
+        budget_variance = round(
+            current_expenses - total_budget,
+            2
         )
-        * 100
-    ) if current_revenue > 0 else 0
+    except Exception as e:
+        print(f"[ERROR] Failed to calculate metrics: {e}")
+        raise
 
-    budget_utilization = (
-        current_expenses
-        / total_budget
-        * 100
-    ) if total_budget > 0 else 0
-
-    budget_variance = round(
-        current_expenses - total_budget,
-        2
-    )
-
-    # =====================================================
-    # FINAL METRICS
-    # =====================================================
+    # -- final metrics
 
     return {
         "user_id": user_id,

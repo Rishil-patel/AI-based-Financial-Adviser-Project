@@ -1,20 +1,31 @@
+# -------------------------
+# === Saving Suggestion ===
+# -------------------------
+
 def generate(financial_metrics):
 
     recommendations = []
 
-    current_profit     = financial_metrics["current_profit"]
-    current_revenue    = financial_metrics["current_revenue"]
-    profit_margin      = financial_metrics["profit_margin"]
-    expense_growth     = financial_metrics["expense_growth"]
-    revenue_growth     = financial_metrics["revenue_growth"]
-    budget_utilization = financial_metrics["budget_utilization"]
-    total_budget       = financial_metrics["total_budget"]
-    budget_variance    = financial_metrics["budget_variance"]
+    try:
+        current_profit = financial_metrics["current_profit"]
+        current_revenue = financial_metrics["current_revenue"]
+        
+        profit_margin = financial_metrics["profit_margin"]
+        expense_growth = financial_metrics["expense_growth"]
+        revenue_growth = financial_metrics["revenue_growth"]
+        
+        budget_utilization = financial_metrics["budget_utilization"]
+        total_budget = financial_metrics["total_budget"]
+        budget_variance = financial_metrics["budget_variance"]
 
-    # =====================================================
-    # RULE 1: PROFIT EXISTS BUT MARGIN IS THIN
-    # Savings habit should start now before margin erodes.
-    # =====================================================
+    except KeyError as e:
+        print(f"[ERROR] Missing key: {e}")
+        raise
+    except Exception as e:
+        print(f"[ERROR] Failed to read financial metrics: {e}")
+        raise
+
+    # -- profit exists but margin is thin
 
     if current_profit > 0 and profit_margin < 15:
 
@@ -28,10 +39,7 @@ def generate(financial_metrics):
             "priority": "medium"
         })
 
-    # =====================================================
-    # RULE 2: DECENT MARGIN — ENCOURAGE FORMAL SAVING
-    # A portion of healthy margin should be set aside.
-    # =====================================================
+    # -- decent margin encourage formal saving
 
     elif profit_margin >= 15 and profit_margin < 30:
 
@@ -47,10 +55,7 @@ def generate(financial_metrics):
             "priority": "medium"
         })
 
-    # =====================================================
-    # RULE 3: STRONG MARGIN — ALLOCATE SAVINGS FORMALLY
-    # No excuse not to save with margins this healthy.
-    # =====================================================
+    # -- strong margin allocate savings formally
 
     elif profit_margin >= 30:
 
@@ -66,10 +71,7 @@ def generate(financial_metrics):
             "priority": "high"
         })
 
-    # =====================================================
-    # RULE 4: SILENT EXPENSE CREEP
-    # Expenses rising faster than revenue quietly erodes savings.
-    # =====================================================
+    # -- silent expense creep
 
     if expense_growth > 10 and revenue_growth < expense_growth:
 
@@ -83,12 +85,13 @@ def generate(financial_metrics):
             "priority": "medium"
         })
 
-    # =====================================================
-    # RULE 5: UNDERUTILISED BUDGET — REDIRECT TO SAVINGS
-    # Unspent budget is an opportunity, not a free pass to spend.
-    # =====================================================
+    # -- underutilised budget redirect to savings
 
-    if budget_utilization > 0 and budget_utilization < 50 and current_profit > 0:
+    if (
+        budget_utilization > 0
+        and budget_utilization < 50
+        and current_profit > 0
+    ):
 
         unspent = abs(budget_variance)
 
